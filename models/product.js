@@ -1,21 +1,6 @@
-const fs = require('fs');
-const path = require('path');
+const db=require('../util/database');
+const cart = require('./cart');
 
-const p = path.join(
-  path.dirname(process.mainModule.filename),
-  'data',
-  'products.json'
-);
-
-const getProductsFromFile = cb => {
-  fs.readFile(p, (err, fileContent) => {
-    if (err) {
-      cb([]);
-    } else {
-      cb(JSON.parse(fileContent));
-    }
-  });
-};
 
 module.exports = class Product {
   constructor(id,title, imageUrl, description, price) {
@@ -27,46 +12,19 @@ module.exports = class Product {
   }
 
   save() {
-    getProductsFromFile(products => {
-      if(this.id){
-        const existprodindex=products.findIndex(prod=>prod.id===this.id);
-        const updatedprod=[...products];
-        updatedprod[existprodindex]=this;
-        fs.writeFile(p, JSON.stringify(updatedprod), err => {
-          console.log(err);
-        });
-      }else{
-        this.id = Math.random().toString();
-        products.push(this);
-        fs.writeFile(p, JSON.stringify(products), err => {
-          console.log(err);
-        });
-      }
-     
-    });
+  return db.execute('INSERT INTO PRODUCT (title,price,description,imageurl) VALUES (?,?,?,?)',
+   [this.title,this.price,this.description,this.imageUrl])
   }
 
   static fetchAll(cb) {
-    getProductsFromFile(cb);
+    return db.execute('select * from product');
+  
   }
 
   static findById(id, cb) {
-    getProductsFromFile(products => {
-      const product = products.find(p => p.id === id);
-      cb(product);
-    });
+    return db.execute('select * from product where product.id=(?)',[id])
   }
   static delete(id){
-    getProductsFromFile(products => {
-      const index = products.findIndex(p => p.id === id);
-      const updatedprod=[...products];
-      if(index>-1){
-        updatedprod.splice(index,1);
-        fs.writeFile(p, JSON.stringify(updatedprod), err => {
-          console.log(err);
-        });
-      }
-      
-    });
+   return db.execute('delete from product where id=(?)',[id])
   }
 };
